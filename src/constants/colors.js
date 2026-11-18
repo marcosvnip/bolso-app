@@ -1,22 +1,13 @@
-export const COLORS = {
-  primary: '#6c5ce7',
-  primaryDark: '#4b3fc4',
-  primarySoft: '#ece9ff',
-  background: '#f7f7fb',
-  card: '#ffffff',
-  text: '#14142b',
-  textSecondary: '#6e6e87',
-  border: '#ebebf3',
-  error: '#e5484d',
-  errorSoft: '#ffeceb',
+export const CATEGORY_META = {
+  Alimentação: { icon: 'restaurant', color: '#f59f00' },
+  Transporte: { icon: 'car', color: '#339af0' },
+  Lazer: { icon: 'game-controller', color: '#e64980' },
+  Contas: { icon: 'receipt', color: '#12b886' },
+  Estudos: { icon: 'school', color: '#7950f2' },
 };
 
-export const SHADOW = {
-  shadowColor: '#2b2457',
-  shadowOpacity: 0.08,
-  shadowRadius: 14,
-  shadowOffset: { width: 0, height: 6 },
-  elevation: 3,
-};
+export const CATEGORIES = Object.keys(CATEGORY_META);
 
-export const CATEGORIES = ['Alimentação', 'Transporte', 'Lazer', 'Contas', 'Estudos'];
+export function getCategoryMeta(category, fallbackColor) {
+  return CATEGORY_META[category] ?? { icon: 'pricetag', color: fallbackColor };
+}

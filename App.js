@@ -1,40 +1,50 @@
-import { Pressable } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ExpensesProvider } from './src/store/expenses-context';
+import Summary from './src/screens/Summary';
 import RecentExpenses from './src/screens/RecentExpenses';
 import AllExpenses from './src/screens/AllExpenses';
 import ManageExpense from './src/screens/ManageExpense';
-import { COLORS } from './src/constants/colors';
+import { useTheme } from './src/constants/theme';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function Tabs() {
+  const theme = useTheme();
+
   return (
     <Tab.Navigator
-      screenOptions={({ navigation }) => ({
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textSecondary,
+      screenOptions={{
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
         tabBarLabelStyle: { fontSize: 12, fontWeight: '700' },
-        headerStyle: { backgroundColor: COLORS.background },
+        tabBarStyle: {
+          backgroundColor: theme.card,
+          borderTopColor: theme.border,
+          height: 64,
+          paddingBottom: 8,
+          paddingTop: 6,
+        },
+        headerStyle: { backgroundColor: theme.background },
         headerShadowVisible: false,
-        headerTitleStyle: { fontWeight: '800', fontSize: 22, color: COLORS.text },
-        sceneStyle: { backgroundColor: COLORS.background },
-        headerRight: () => (
-          <Pressable
-            onPress={() => navigation.navigate('ManageExpense')}
-            style={({ pressed }) => ({ marginRight: 16, opacity: pressed ? 0.5 : 1 })}
-          >
-            <Ionicons name="add-circle" size={32} color={COLORS.primary} />
-          </Pressable>
-        ),
-      })}
+        headerTitleAlign: 'left',
+        headerTitleStyle: { fontWeight: '900', fontSize: 26, color: theme.text },
+        sceneStyle: { backgroundColor: theme.background },
+      }}
     >
+      <Tab.Screen
+        name="Summary"
+        component={Summary}
+        options={{
+          title: 'Resumo',
+          tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" size={size} color={color} />,
+        }}
+      />
       <Tab.Screen
         name="RecentExpenses"
         component={RecentExpenses}
@@ -58,16 +68,31 @@ function Tabs() {
 }
 
 export default function App() {
+  const theme = useTheme();
+  const base = theme.dark ? DarkTheme : DefaultTheme;
+  const navTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: theme.primary,
+      background: theme.background,
+      card: theme.card,
+      text: theme.text,
+      border: theme.border,
+    },
+  };
+
   return (
     <ExpensesProvider>
-      <StatusBar style="dark" />
-      <NavigationContainer>
+      <StatusBar style={theme.dark ? 'light' : 'dark'} />
+      <NavigationContainer theme={navTheme}>
         <Stack.Navigator
           screenOptions={{
-            headerStyle: { backgroundColor: COLORS.background },
+            headerStyle: { backgroundColor: theme.background },
             headerShadowVisible: false,
+            headerTintColor: theme.text,
             headerTitleStyle: { fontWeight: '800' },
-            contentStyle: { backgroundColor: COLORS.background },
+            contentStyle: { backgroundColor: theme.background },
           }}
         >
           <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />

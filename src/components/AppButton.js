@@ -1,22 +1,25 @@
-import { Pressable, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/colors';
+import { useTheme } from '../constants/theme';
 
 export default function AppButton({ title, icon, onPress, variant = 'primary', loading = false }) {
-  const textColor = variant === 'primary' ? '#fff' : variant === 'danger' ? COLORS.error : COLORS.primary;
+  const theme = useTheme();
+  const background =
+    variant === 'primary' ? theme.primary : variant === 'danger' ? theme.errorSoft : theme.primarySoft;
+  const color = variant === 'primary' ? '#ffffff' : variant === 'danger' ? theme.error : theme.primary;
 
   return (
     <Pressable
       onPress={onPress}
       disabled={loading}
-      style={({ pressed }) => [styles.button, styles[variant], pressed && styles.pressed]}
+      style={({ pressed }) => [styles.button, { backgroundColor: background }, pressed && styles.pressed]}
     >
       {loading ? (
-        <ActivityIndicator color={textColor} />
+        <ActivityIndicator color={color} />
       ) : (
         <>
-          {icon ? <Ionicons name={icon} size={20} color={textColor} /> : null}
-          <Text style={[styles.text, { color: textColor }]}>{title}</Text>
+          {icon ? <Ionicons name={icon} size={20} color={color} /> : null}
+          <Text style={[styles.text, { color }]}>{title}</Text>
         </>
       )}
     </Pressable>
@@ -33,9 +36,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     borderRadius: 999,
   },
-  primary: { backgroundColor: COLORS.primary },
-  soft: { backgroundColor: COLORS.primarySoft },
-  danger: { backgroundColor: COLORS.errorSoft },
   pressed: { opacity: 0.75 },
-  text: { fontSize: 16, fontWeight: '700' },
+  text: { fontSize: 16, fontWeight: '800' },
 });

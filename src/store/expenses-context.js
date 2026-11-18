@@ -7,6 +7,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  setDoc,
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -16,6 +17,7 @@ const ExpensesContext = createContext(null);
 
 export function ExpensesProvider({ children }) {
   const [expenses, setExpenses] = useState([]);
+  const [budget, setBudgetState] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -36,21 +38,34 @@ export function ExpensesProvider({ children }) {
     return unsubscribe;
   }, []);
 
-  async function addExpense(data) {
-    await addDoc(collection(db, COLLECTION), data);
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      doc(db, 'config', 'orcamento'),
+      (snap) => setBudgetState(snap.exists() ? snap.data().valor ?? 0 : 0),
+      () => {}
+    );
+    return unsubscribe;
+  }, []);
+
+  function addExpense(data) {
+    return addDoc(collection(db, COLLECTION), data);
   }
 
-  async function updateExpense(id, data) {
-    await updateDoc(doc(db, COLLECTION, id), data);
+  function updateExpense(id, data) {
+    return updateDoc(doc(db, COLLECTION, id), data);
   }
 
-  async function deleteExpense(id) {
-    await deleteDoc(doc(db, COLLECTION, id));
+  function deleteExpense(id) {
+    return deleteDoc(doc(db, COLLECTION, id));
+  }
+
+  function setBudget(valor) {
+    return setDoc(doc(db, 'config', 'orcamento'), { valor });
   }
 
   return (
     <ExpensesContext.Provider
-      value={{ expenses, loading, error, addExpense, updateExpense, deleteExpense }}
+      value={{ expenses, budget, loading, error, addExpense, updateExpense, deleteExpense, setBudget }}
     >
       {children}
     </ExpensesContext.Provider>

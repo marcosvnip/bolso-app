@@ -24,3 +24,8 @@ export function formatDate(iso) {
 export function formatMoney(value) {
   return `R$ ${value.toFixed(2).replace('.', ',')}`;
 }
+
+export function currentMonthLabel() {
+  const label = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -10,11 +10,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
 import AppButton from '../components/AppButton';
 import { useExpenses } from '../store/expenses-context';
-import { CATEGORIES, COLORS } from '../constants/colors';
+import { CATEGORIES, getCategoryMeta } from '../constants/colors';
+import { useTheme } from '../constants/theme';
 import { formatDate, toISODate, todayISO } from '../util/date';
 
 function notify(title, message) {
@@ -57,6 +59,8 @@ function validate(values) {
 }
 
 export default function ManageExpense({ route, navigation }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const expenseId = route.params?.expenseId;
   const isEditing = Boolean(expenseId);
   const { expenses, addExpense, updateExpense, deleteExpense } = useExpenses();
@@ -69,7 +73,6 @@ export default function ManageExpense({ route, navigation }) {
     category: current?.category ?? '',
   });
   const [errors, setErrors] = useState({});
-  const [saving, setSaving] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
 
   useLayoutEffect(() => {
@@ -91,7 +94,7 @@ export default function ManageExpense({ route, navigation }) {
     if (selected) handleChange('date', toISODate(selected));
   }
 
-  async function handleSave() {
+  function handleSave() {
     const found = validate(form);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
@@ -103,31 +106,17 @@ export default function ManageExpense({ route, navigation }) {
       category: form.category,
     };
 
-    setSaving(true);
-    try {
-      if (isEditing) {
-        await updateExpense(expenseId, data);
-      } else {
-        await addExpense(data);
-      }
-      try {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch (e) {}
-      navigation.goBack();
-    } catch (e) {
-      notify('Erro', 'Não foi possível salvar. Tente novamente.');
-      setSaving(false);
-    }
+    const request = isEditing ? updateExpense(expenseId, data) : addExpense(data);
+    request.catch(() => notify('Erro', 'Não foi possível salvar. Tente novamente.'));
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    navigation.goBack();
   }
 
   function handleDelete() {
-    confirmDelete(async () => {
-      try {
-        await deleteExpense(expenseId);
-        navigation.goBack();
-      } catch (e) {
-        notify('Erro', 'Não foi possível excluir.');
-      }
+    confirmDelete(() => {
+      deleteExpense(expenseId).catch(() => notify('Erro', 'Não foi possível excluir.'));
+      navigation.goBack();
     });
   }
 
@@ -138,9 +127,9 @@ export default function ManageExpense({ route, navigation }) {
         <TextInput
           style={[styles.input, errors.description && styles.inputError]}
           value={form.description}
-          onChangeText={(t) => handleChange('description', t)}
+          onChangeText={(text) => handleChange('description', text)}
           placeholder="Ex.: Almoço"
-          placeholderTextColor={COLORS.textSecondary}
+          placeholderTextColor={theme.textSecondary}
         />
         {errors.description ? <Text style={styles.error}>{errors.description}</Text> : null}
 
@@ -151,7 +140,7 @@ export default function ManageExpense({ route, navigation }) {
           onChangeText={handleAmount}
           keyboardType="decimal-pad"
           placeholder="0.00"
-          placeholderTextColor={COLORS.textSecondary}
+          placeholderTextColor={theme.textSecondary}
         />
         {errors.amount ? <Text style={styles.error}>{errors.amount}</Text> : null}
 
@@ -160,16 +149,13 @@ export default function ManageExpense({ route, navigation }) {
           <TextInput
             style={[styles.input, errors.date && styles.inputError]}
             value={form.date}
-            onChangeText={(t) => handleChange('date', t)}
+            onChangeText={(text) => handleChange('date', text)}
             placeholder="AAAA-MM-DD"
-            placeholderTextColor={COLORS.textSecondary}
+            placeholderTextColor={theme.textSecondary}
           />
         ) : (
           <>
-            <Pressable
-              style={[styles.input, errors.date && styles.inputError]}
-              onPress={() => setShowPicker(true)}
-            >
+            <Pressable style={[styles.input, errors.date && styles.inputError]} onPress={() => setShowPicker(true)}>
               <Text style={styles.dateText}>{formatDate(form.date)}</Text>
             </Pressable>
             {showPicker ? (
@@ -186,20 +172,25 @@ export default function ManageExpense({ route, navigation }) {
 
         <Text style={styles.label}>Categoria</Text>
         <View style={styles.chips}>
-          {CATEGORIES.map((cat) => (
-            <Pressable
-              key={cat}
-              onPress={() => handleChange('category', cat)}
-              style={[styles.chip, cat === form.category && styles.chipActive]}
-            >
-              <Text style={[styles.chipText, cat === form.category && styles.chipTextActive]}>{cat}</Text>
-            </Pressable>
-          ))}
+          {CATEGORIES.map((cat) => {
+            const active = cat === form.category;
+            const meta = getCategoryMeta(cat, theme.primary);
+            return (
+              <Pressable
+                key={cat}
+                onPress={() => handleChange('category', cat)}
+                style={[styles.chip, active && { backgroundColor: meta.color, borderColor: meta.color }]}
+              >
+                <Ionicons name={meta.icon} size={16} color={active ? '#ffffff' : meta.color} />
+                <Text style={[styles.chipText, active && { color: '#ffffff' }]}>{cat}</Text>
+              </Pressable>
+            );
+          })}
         </View>
         {errors.category ? <Text style={styles.error}>{errors.category}</Text> : null}
 
         <View style={styles.actions}>
-          <AppButton title="Salvar" icon="checkmark" onPress={handleSave} loading={saving} />
+          <AppButton title="Salvar" icon="checkmark" onPress={handleSave} />
           {isEditing ? <AppButton title="Excluir" icon="trash" variant="danger" onPress={handleDelete} /> : null}
           <AppButton title="Cancelar" variant="soft" onPress={() => navigation.goBack()} />
         </View>
@@ -208,33 +199,35 @@ export default function ManageExpense({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 20, paddingBottom: 40 },
-  label: { fontSize: 14, fontWeight: '800', color: COLORS.text, marginTop: 16, marginBottom: 6 },
-  input: {
-    backgroundColor: COLORS.card,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    fontSize: 16,
-    color: COLORS.text,
-  },
-  inputError: { borderColor: COLORS.error },
-  dateText: { fontSize: 16, color: COLORS.text },
-  error: { color: COLORS.error, marginTop: 6, fontSize: 13 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    backgroundColor: COLORS.card,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  chipText: { color: COLORS.text, fontWeight: '600' },
-  chipTextActive: { color: '#fff' },
-  actions: { marginTop: 28, gap: 12 },
-});
+const makeStyles = (t) =>
+  StyleSheet.create({
+    container: { padding: 20, paddingBottom: 40 },
+    label: { fontSize: 14, fontWeight: '800', color: t.text, marginTop: 18, marginBottom: 8 },
+    input: {
+      backgroundColor: t.card,
+      borderWidth: 1.5,
+      borderColor: t.border,
+      borderRadius: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 16,
+      color: t.text,
+    },
+    inputError: { borderColor: t.error },
+    dateText: { fontSize: 16, color: t.text },
+    error: { color: t.error, marginTop: 6, fontSize: 13 },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: t.card,
+      borderWidth: 1.5,
+      borderColor: t.border,
+      borderRadius: 999,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+    },
+    chipText: { color: t.text, fontWeight: '700' },
+    actions: { marginTop: 28, gap: 12 },
+  });
