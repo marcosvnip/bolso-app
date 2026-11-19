@@ -39,7 +39,7 @@ function Tabs() {
         headerShadowVisible: false,
         headerRight: () => <Brand />,
         headerTitleAlign: 'left',
-        headerTitleStyle: { fontWeight: '900', fontSize: 28, color: theme.text, letterSpacing: -0.8 },
+        headerTitleStyle: { fontWeight: '800', fontSize: 17, color: theme.text, letterSpacing: 1.6, textTransform: 'uppercase' },
         sceneStyle: { backgroundColor: theme.background },
       }}
     >
