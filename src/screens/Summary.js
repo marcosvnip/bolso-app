@@ -4,10 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import GradientCard from '../components/GradientCard';
 import AppButton from '../components/AppButton';
 import Reveal from '../components/Reveal';
+import { DonutChart, MonthBars } from '../components/Charts';
 import { useExpenses } from '../store/expenses-context';
 import { CATEGORIES, getCategoryMeta } from '../constants/colors';
 import { shadow, useTheme } from '../constants/theme';
-import { currentMonthLabel, formatDate, formatMoney, todayISO } from '../util/date';
+import { currentMonthLabel, formatDate, formatMoney, lastMonths, todayISO } from '../util/date';
 
 function notify(title, message) {
   if (Platform.OS === 'web') {
@@ -37,6 +38,21 @@ export default function Summary() {
     const income = incomes.filter((item) => item.date.startsWith(month)).reduce((acc, item) => acc + item.amount, 0);
     return { list, total, income, balance: income - total, byCategory, biggest, average: total / new Date().getDate() };
   }, [expenses, incomes]);
+
+  const months = useMemo(
+    () =>
+      lastMonths(6).map((m) => ({
+        ...m,
+        expense: expenses.filter((item) => item.date.startsWith(m.key)).reduce((acc, item) => acc + item.amount, 0),
+        income: incomes.filter((item) => item.date.startsWith(m.key)).reduce((acc, item) => acc + item.amount, 0),
+      })),
+    [expenses, incomes]
+  );
+  const donutData = data.byCategory.map((row) => ({
+    label: row.cat,
+    value: row.value,
+    color: getCategoryMeta(row.cat, theme.primary).color,
+  }));
 
   const ratio = budget > 0 ? data.total / budget : 0;
   const barColor = ratio >= 1 ? theme.error : ratio >= 0.7 ? theme.warning : theme.success;
@@ -110,12 +126,25 @@ export default function Summary() {
         </View>
       </Reveal>
 
+      <Reveal delay={120}>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="bar-chart" size={18} color={theme.primary} />
+            <Text style={styles.cardTitle}>Últimos 6 meses</Text>
+          </View>
+          <MonthBars data={months} />
+        </View>
+      </Reveal>
+
       <Reveal delay={160}>
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="pie-chart" size={18} color={theme.primary} />
             <Text style={styles.cardTitle}>Gastos por categoria</Text>
           </View>
+          {donutData.length > 0 ? (
+            <DonutChart data={donutData} centerLabel="Total" centerValue={formatMoney(data.total)} />
+          ) : null}
           {data.byCategory.length === 0 ? (
             <Text style={styles.muted}>Sem despesas neste mês ainda.</Text>
           ) : (
