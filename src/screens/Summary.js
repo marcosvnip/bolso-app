@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import GradientCard from '../components/GradientCard';
 import AppButton from '../components/AppButton';
 import Reveal from '../components/Reveal';
-import { DonutChart, MonthBars } from '../components/Charts';
+import { DonutChart, Gauge, MonthBars } from '../components/Charts';
 import { useExpenses } from '../store/expenses-context';
 import { CATEGORIES, getCategoryMeta } from '../constants/colors';
 import { shadow, useTheme } from '../constants/theme';
@@ -99,9 +99,7 @@ export default function Summary() {
           </View>
           {budget > 0 ? (
             <>
-              <View style={styles.track}>
-                <View style={[styles.fill, { width: `${Math.min(ratio, 1) * 100}%`, backgroundColor: barColor }]} />
-              </View>
+              <Gauge ratio={ratio} color={barColor} />
               <Text style={styles.muted}>
                 {formatMoney(data.total)} de {formatMoney(budget)} ({Math.round(ratio * 100)}%)
               </Text>
