@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   updateProfile,
@@ -54,12 +55,16 @@ export function AuthProvider({ children }) {
     setVersion((v) => v + 1);
   }
 
+  function resetPassword(email) {
+    return sendPasswordResetEmail(auth, email.trim());
+  }
+
   function signOut() {
     return firebaseSignOut(auth);
   }
 
   return (
-    <AuthContext.Provider value={{ user, initializing, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, initializing, signIn, signUp, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
