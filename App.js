@@ -3,8 +3,11 @@ import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 
+import { AuthProvider, useAuth } from './src/store/auth-context';
 import { ExpensesProvider } from './src/store/expenses-context';
+import Login from './src/screens/Login';
 import Summary from './src/screens/Summary';
 import RecentExpenses from './src/screens/RecentExpenses';
 import AllExpenses from './src/screens/AllExpenses';
@@ -16,6 +19,7 @@ const Tab = createBottomTabNavigator();
 
 function Tabs() {
   const theme = useTheme();
+  const { signOut } = useAuth();
 
   return (
     <Tab.Navigator
@@ -32,6 +36,11 @@ function Tabs() {
         },
         headerStyle: { backgroundColor: theme.background },
         headerShadowVisible: false,
+        headerRight: () => (
+          <Pressable onPress={signOut} style={{ marginRight: 16 }} hitSlop={10}>
+            <Ionicons name="log-out-outline" size={26} color={theme.textSecondary} />
+          </Pressable>
+        ),
         headerTitleAlign: 'left',
         headerTitleStyle: { fontWeight: '900', fontSize: 26, color: theme.text },
         sceneStyle: { backgroundColor: theme.background },
@@ -67,8 +76,9 @@ function Tabs() {
   );
 }
 
-export default function App() {
+function Root() {
   const theme = useTheme();
+  const { user, initializing } = useAuth();
   const base = theme.dark ? DarkTheme : DefaultTheme;
   const navTheme = {
     ...base,
@@ -81,6 +91,23 @@ export default function App() {
       border: theme.border,
     },
   };
+
+  if (initializing) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.background }}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <StatusBar style={theme.dark ? 'light' : 'dark'} />
+        <Login />
+      </View>
+    );
+  }
 
   return (
     <ExpensesProvider>
@@ -100,5 +127,13 @@ export default function App() {
         </Stack.Navigator>
       </NavigationContainer>
     </ExpensesProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Root />
+    </AuthProvider>
   );
 }

@@ -5,28 +5,33 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
-  orderBy,
   query,
   setDoc,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { useAuth } from './auth-context';
 
 const COLLECTION = 'despesas';
 const ExpensesContext = createContext(null);
 
 export function ExpensesProvider({ children }) {
+  const { user } = useAuth();
+  const uid = user.uid;
   const [expenses, setExpenses] = useState([]);
   const [budget, setBudgetState] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const q = query(collection(db, COLLECTION), orderBy('date', 'desc'));
+    const q = query(collection(db, COLLECTION), where('uid', '==', uid));
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        setExpenses(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+        const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        list.sort((a, b) => b.date.localeCompare(a.date));
+        setExpenses(list);
         setError(null);
         setLoading(false);
       },
@@ -36,19 +41,19 @@ export function ExpensesProvider({ children }) {
       }
     );
     return unsubscribe;
-  }, []);
+  }, [uid]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
-      doc(db, 'config', 'orcamento'),
+      doc(db, 'config', uid),
       (snap) => setBudgetState(snap.exists() ? snap.data().valor ?? 0 : 0),
       () => {}
     );
     return unsubscribe;
-  }, []);
+  }, [uid]);
 
   function addExpense(data) {
-    return addDoc(collection(db, COLLECTION), data);
+    return addDoc(collection(db, COLLECTION), { ...data, uid });
   }
 
   function updateExpense(id, data) {
@@ -60,7 +65,7 @@ export function ExpensesProvider({ children }) {
   }
 
   function setBudget(valor) {
-    return setDoc(doc(db, 'config', 'orcamento'), { valor });
+    return setDoc(doc(db, 'config', uid), { valor });
   }
 
   return (
