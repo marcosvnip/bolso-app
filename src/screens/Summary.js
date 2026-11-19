@@ -4,10 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import GradientCard from '../components/GradientCard';
 import AppButton from '../components/AppButton';
 import Reveal from '../components/Reveal';
+import { DonutChart, MonthBars } from '../components/Charts';
 import { useExpenses } from '../store/expenses-context';
 import { CATEGORIES, getCategoryMeta } from '../constants/colors';
 import { shadow, useTheme } from '../constants/theme';
-import { currentMonthLabel, formatDate, formatMoney, todayISO } from '../util/date';
+import { currentMonthLabel, formatDate, formatMoney, lastMonths, todayISO } from '../util/date';
 
 function notify(title, message) {
   if (Platform.OS === 'web') {
@@ -20,7 +21,7 @@ function notify(title, message) {
 export default function Summary() {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { expenses, budget, loading, setBudget } = useExpenses();
+  const { expenses, incomes, budget, loading, setBudget } = useExpenses();
   const [draft, setDraft] = useState('');
 
   const data = useMemo(() => {
@@ -34,8 +35,24 @@ export default function Summary() {
       .filter((row) => row.value > 0)
       .sort((a, b) => b.value - a.value);
     const biggest = list.reduce((max, item) => (!max || item.amount > max.amount ? item : max), null);
-    return { list, total, byCategory, biggest, average: total / new Date().getDate() };
-  }, [expenses]);
+    const income = incomes.filter((item) => item.date.startsWith(month)).reduce((acc, item) => acc + item.amount, 0);
+    return { list, total, income, balance: income - total, byCategory, biggest, average: total / new Date().getDate() };
+  }, [expenses, incomes]);
+
+  const months = useMemo(
+    () =>
+      lastMonths(6).map((m) => ({
+        ...m,
+        expense: expenses.filter((item) => item.date.startsWith(m.key)).reduce((acc, item) => acc + item.amount, 0),
+        income: incomes.filter((item) => item.date.startsWith(m.key)).reduce((acc, item) => acc + item.amount, 0),
+      })),
+    [expenses, incomes]
+  );
+  const donutData = data.byCategory.map((row) => ({
+    label: row.cat,
+    value: row.value,
+    color: getCategoryMeta(row.cat, theme.primary).color,
+  }));
 
   const ratio = budget > 0 ? data.total / budget : 0;
   const barColor = ratio >= 1 ? theme.error : ratio >= 0.7 ? theme.warning : theme.success;
@@ -55,12 +72,16 @@ export default function Summary() {
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
       <Reveal>
         <GradientCard style={styles.hero}>
-          <Text style={styles.heroLabel}>{currentMonthLabel()}</Text>
-          <Text style={styles.heroTotal}>{loading ? '...' : formatMoney(data.total)}</Text>
+          <Text style={styles.heroLabel}>Saldo de {currentMonthLabel()}</Text>
+          <Text style={styles.heroTotal}>{loading ? '...' : formatMoney(data.balance)}</Text>
           <View style={styles.heroRow}>
             <View style={styles.heroPill}>
-              <Ionicons name="receipt-outline" size={14} color="#ffffff" />
-              <Text style={styles.heroPillText}>{data.list.length} despesas</Text>
+              <Ionicons name="arrow-down-circle" size={14} color="#ffffff" />
+              <Text style={styles.heroPillText}>Receitas {formatMoney(data.income)}</Text>
+            </View>
+            <View style={styles.heroPill}>
+              <Ionicons name="arrow-up-circle" size={14} color="#ffffff" />
+              <Text style={styles.heroPillText}>Despesas {formatMoney(data.total)}</Text>
             </View>
             <View style={styles.heroPill}>
               <Ionicons name="trending-up" size={14} color="#ffffff" />
@@ -105,12 +126,25 @@ export default function Summary() {
         </View>
       </Reveal>
 
+      <Reveal delay={120}>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="bar-chart" size={18} color={theme.primary} />
+            <Text style={styles.cardTitle}>Últimos 6 meses</Text>
+          </View>
+          <MonthBars data={months} />
+        </View>
+      </Reveal>
+
       <Reveal delay={160}>
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="pie-chart" size={18} color={theme.primary} />
             <Text style={styles.cardTitle}>Gastos por categoria</Text>
           </View>
+          {donutData.length > 0 ? (
+            <DonutChart data={donutData} centerLabel="Total" centerValue={formatMoney(data.total)} />
+          ) : null}
           {data.byCategory.length === 0 ? (
             <Text style={styles.muted}>Sem despesas neste mês ainda.</Text>
           ) : (
@@ -161,8 +195,8 @@ const makeStyles = (t) =>
   StyleSheet.create({
     container: { padding: 16, paddingBottom: 40, gap: 16 },
     hero: { gap: 6 },
-    heroLabel: { color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: 14 },
-    heroTotal: { color: '#ffffff', fontSize: 44, fontWeight: '900' },
+    heroLabel: { color: 'rgba(255,255,255,0.8)', fontWeight: '800', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.2 },
+    heroTotal: { color: '#ffffff', fontSize: 52, fontWeight: '900', letterSpacing: -2 },
     heroRow: { flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' },
     heroPill: {
       flexDirection: 'row',
@@ -184,7 +218,7 @@ const makeStyles = (t) =>
       ...shadow(t),
     },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cardTitle: { fontSize: 16, fontWeight: '800', color: t.text },
+    cardTitle: { fontSize: 17, fontWeight: '900', color: t.text, letterSpacing: -0.3 },
     muted: { color: t.textSecondary },
     alert: { color: t.error, fontWeight: '700' },
     track: { height: 12, borderRadius: 6, backgroundColor: t.primarySoft, overflow: 'hidden' },
@@ -203,7 +237,7 @@ const makeStyles = (t) =>
       color: t.text,
     },
     catRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    catIcon: { width: 38, height: 38, borderRadius: 19, justifyContent: 'center', alignItems: 'center' },
+    catIcon: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     catTop: { flexDirection: 'row', justifyContent: 'space-between' },
     catName: { fontWeight: '700', color: t.text },
     catValue: { fontWeight: '800', color: t.text },
