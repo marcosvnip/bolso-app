@@ -1,5 +1,3 @@
-import { useColorScheme } from 'react-native';
-
 export const LIGHT = {
   dark: false,
   primary: '#0f5c3f',
@@ -21,25 +19,26 @@ export const LIGHT = {
 
 export const DARK = {
   dark: true,
-  primary: '#22a868',
-  primaryDark: '#1a8552',
-  primarySoft: '#17261e',
-  gradient: ['#14532d', '#14532d'],
-  accent: '#c8f169',
-  onAccent: '#10231a',
-  background: '#0b0f0c',
-  card: '#141a16',
-  text: '#f2f5ef',
-  textSecondary: '#8c9a90',
-  border: '#232c26',
-  error: '#ff7a6e',
-  errorSoft: '#2d1815',
-  success: '#4ade80',
-  warning: '#f5b73b',
+  primary: '#2b94e6',
+  primaryDark: '#1f76ba',
+  primarySoft: '#26364b',
+  gradient: ['#243247', '#243247'],
+  accent: '#4cc3ff',
+  onAccent: '#06121f',
+  background: '#141c28',
+  card: '#1e2938',
+  text: '#eaf2fb',
+  textSecondary: '#8da0b8',
+  border: '#2d3c52',
+  error: '#ff6b6b',
+  errorSoft: '#3a2127',
+  success: '#34d399',
+  warning: '#fbbf24',
 };
 
+// O app usa sempre o painel escuro (visual de dashboard)
 export function useTheme() {
-  return useColorScheme() === 'dark' ? DARK : LIGHT;
+  return DARK;
 }
 
 export function shadow(theme) {
