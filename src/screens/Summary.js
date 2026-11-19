@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import GradientCard from '../components/GradientCard';
 import AppButton from '../components/AppButton';
 import Reveal from '../components/Reveal';
-import { DonutChart, MonthBars } from '../components/Charts';
+import { DonutChart, Gauge, MonthBars } from '../components/Charts';
 import { useExpenses } from '../store/expenses-context';
 import { CATEGORIES, getCategoryMeta } from '../constants/colors';
 import { shadow, useTheme } from '../constants/theme';
@@ -99,9 +99,7 @@ export default function Summary() {
           </View>
           {budget > 0 ? (
             <>
-              <View style={styles.track}>
-                <View style={[styles.fill, { width: `${Math.min(ratio, 1) * 100}%`, backgroundColor: barColor }]} />
-              </View>
+              <Gauge ratio={ratio} color={barColor} />
               <Text style={styles.muted}>
                 {formatMoney(data.total)} de {formatMoney(budget)} ({Math.round(ratio * 100)}%)
               </Text>
@@ -195,8 +193,8 @@ const makeStyles = (t) =>
   StyleSheet.create({
     container: { padding: 16, paddingBottom: 40, gap: 16 },
     hero: { gap: 6 },
-    heroLabel: { color: 'rgba(255,255,255,0.85)', fontWeight: '700', fontSize: 14 },
-    heroTotal: { color: '#ffffff', fontSize: 44, fontWeight: '900' },
+    heroLabel: { color: 'rgba(255,255,255,0.8)', fontWeight: '800', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.2 },
+    heroTotal: { color: '#ffffff', fontSize: 52, fontWeight: '900', letterSpacing: -2 },
     heroRow: { flexDirection: 'row', gap: 8, marginTop: 6, flexWrap: 'wrap' },
     heroPill: {
       flexDirection: 'row',
@@ -218,7 +216,7 @@ const makeStyles = (t) =>
       ...shadow(t),
     },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cardTitle: { fontSize: 16, fontWeight: '800', color: t.text },
+    cardTitle: { fontSize: 17, fontWeight: '900', color: t.text, letterSpacing: -0.3 },
     muted: { color: t.textSecondary },
     alert: { color: t.error, fontWeight: '700' },
     track: { height: 12, borderRadius: 6, backgroundColor: t.primarySoft, overflow: 'hidden' },
@@ -237,7 +235,7 @@ const makeStyles = (t) =>
       color: t.text,
     },
     catRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    catIcon: { width: 38, height: 38, borderRadius: 19, justifyContent: 'center', alignItems: 'center' },
+    catIcon: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     catTop: { flexDirection: 'row', justifyContent: 'space-between' },
     catName: { fontWeight: '700', color: t.text },
     catValue: { fontWeight: '800', color: t.text },

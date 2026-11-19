@@ -13,6 +13,7 @@ import RecentExpenses from './src/screens/RecentExpenses';
 import AllExpenses from './src/screens/AllExpenses';
 import ManageExpense from './src/screens/ManageExpense';
 import Profile from './src/screens/Profile';
+import Brand from './src/components/Brand';
 import { useTheme } from './src/constants/theme';
 
 const Stack = createNativeStackNavigator();
@@ -36,8 +37,9 @@ function Tabs() {
         },
         headerStyle: { backgroundColor: theme.background },
         headerShadowVisible: false,
+        headerRight: () => <Brand />,
         headerTitleAlign: 'left',
-        headerTitleStyle: { fontWeight: '900', fontSize: 26, color: theme.text },
+        headerTitleStyle: { fontWeight: '800', fontSize: 17, color: theme.text, letterSpacing: 1.6, textTransform: 'uppercase' },
         sceneStyle: { backgroundColor: theme.background },
       }}
     >
@@ -120,6 +122,7 @@ function Root() {
           screenOptions={{
             headerStyle: { backgroundColor: theme.background },
             headerShadowVisible: false,
+            headerRight: () => <Brand />,
             headerTintColor: theme.text,
             headerTitleStyle: { fontWeight: '800' },
             contentStyle: { backgroundColor: theme.background },

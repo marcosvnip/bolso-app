@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 15,
     paddingHorizontal: 22,
-    borderRadius: 999,
+    borderRadius: 18,
   },
   pressed: { opacity: 0.75 },
   text: { fontSize: 16, fontWeight: '800' },

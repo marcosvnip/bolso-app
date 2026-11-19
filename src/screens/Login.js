@@ -9,11 +9,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AppButton from '../components/AppButton';
+import Logo from '../components/Logo';
 import { friendlyAuthError, useAuth } from '../store/auth-context';
-import { shadow, useTheme } from '../constants/theme';
+import { APP_TAGLINE } from '../constants/app';
+import { useTheme } from '../constants/theme';
 
 function validate(mode, values) {
   const errors = {};
@@ -32,11 +33,13 @@ function validate(mode, values) {
 export default function Login() {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const [mode, setMode] = useState('entrar');
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState('');
+  const [info, setInfo] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const isSignUp = mode === 'cadastro';
 
@@ -44,12 +47,14 @@ export default function Login() {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
     setFormError('');
+    setInfo('');
   }
 
   function toggleMode() {
     setMode(isSignUp ? 'entrar' : 'cadastro');
     setErrors({});
     setFormError('');
+    setInfo('');
   }
 
   async function handleSubmit() {
@@ -70,78 +75,116 @@ export default function Login() {
     }
   }
 
+  async function handleForgot() {
+    if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+      setErrors({ email: 'Digite seu e-mail para receber o link de redefinição.' });
+      return;
+    }
+    try {
+      await resetPassword(form.email);
+      setInfo('Enviamos um link para redefinir a senha. Confira seu e-mail.');
+    } catch (error) {
+      setFormError(friendlyAuthError(error));
+    }
+  }
+
+  function field(icon, error, children) {
+    return (
+      <View style={[styles.field, error && styles.fieldError]}>
+        <Ionicons name={icon} size={20} color={theme.textSecondary} />
+        {children}
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <LinearGradient colors={theme.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          <View style={styles.logo}>
-            <Ionicons name="wallet" size={38} color="#ffffff" />
-          </View>
-          <Text style={styles.brand}>Bolso</Text>
-          <Text style={styles.tagline}>Suas finanças, simples e no seu bolso.</Text>
-        </LinearGradient>
+        <View style={styles.logoBox}>
+          <Logo stacked size={72} />
+          <Text style={styles.tagline}>{APP_TAGLINE}</Text>
+        </View>
 
-        <View style={styles.card}>
-          <Text style={styles.title}>{isSignUp ? 'Criar conta' : 'Bem-vindo de volta'}</Text>
+        <Text style={styles.title}>{isSignUp ? 'Criar conta' : 'Bem-vindo de volta'}</Text>
 
-          {isSignUp ? (
-            <>
-              <Text style={styles.label}>Nome</Text>
+        {isSignUp ? (
+          <>
+            {field(
+              'person-outline',
+              errors.name,
               <TextInput
-                style={[styles.input, errors.name && styles.inputError]}
+                style={styles.input}
                 value={form.name}
                 onChangeText={(text) => handleChange('name', text)}
                 placeholder="Seu nome"
                 placeholderTextColor={theme.textSecondary}
               />
-              {errors.name ? <Text style={styles.error}>{errors.name}</Text> : null}
-            </>
-          ) : null}
+            )}
+            {errors.name ? <Text style={styles.error}>{errors.name}</Text> : null}
+          </>
+        ) : null}
 
-          <Text style={styles.label}>E-mail</Text>
+        {field(
+          'mail-outline',
+          errors.email,
           <TextInput
-            style={[styles.input, errors.email && styles.inputError]}
+            style={styles.input}
             value={form.email}
             onChangeText={(text) => handleChange('email', text)}
-            placeholder="voce@email.com"
+            placeholder="E-mail"
             placeholderTextColor={theme.textSecondary}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
           />
-          {errors.email ? <Text style={styles.error}>{errors.email}</Text> : null}
+        )}
+        {errors.email ? <Text style={styles.error}>{errors.email}</Text> : null}
 
-          <Text style={styles.label}>Senha</Text>
-          <TextInput
-            style={[styles.input, errors.password && styles.inputError]}
-            value={form.password}
-            onChangeText={(text) => handleChange('password', text)}
-            placeholder="Mínimo 6 caracteres"
-            placeholderTextColor={theme.textSecondary}
-            secureTextEntry
-            autoCapitalize="none"
-            onSubmitEditing={handleSubmit}
-          />
-          {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
-
-          {formError ? <Text style={styles.formError}>{formError}</Text> : null}
-
-          <View style={{ marginTop: 22 }}>
-            <AppButton
-              title={isSignUp ? 'Criar conta' : 'Entrar'}
-              icon={isSignUp ? 'person-add' : 'log-in'}
-              onPress={handleSubmit}
-              loading={loading}
+        {field(
+          'lock-closed-outline',
+          errors.password,
+          <>
+            <TextInput
+              style={styles.input}
+              value={form.password}
+              onChangeText={(text) => handleChange('password', text)}
+              placeholder="Senha"
+              placeholderTextColor={theme.textSecondary}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              onSubmitEditing={handleSubmit}
             />
-          </View>
+            <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={10}>
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={theme.textSecondary} />
+            </Pressable>
+          </>
+        )}
+        {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
 
-          <Pressable onPress={toggleMode} style={styles.switch}>
-            <Text style={styles.switchText}>
-              {isSignUp ? 'Já tem conta? ' : 'Ainda não tem conta? '}
-              <Text style={styles.switchLink}>{isSignUp ? 'Entrar' : 'Cadastre-se'}</Text>
-            </Text>
+        {!isSignUp ? (
+          <Pressable onPress={handleForgot} style={styles.forgot}>
+            <Text style={styles.link}>Esqueceu a senha?</Text>
           </Pressable>
+        ) : null}
+
+        {formError ? <Text style={styles.formError}>{formError}</Text> : null}
+        {info ? <Text style={styles.info}>{info}</Text> : null}
+
+        <View style={{ marginTop: 22 }}>
+          <AppButton
+            title={isSignUp ? 'Criar conta' : 'Entrar'}
+            icon={isSignUp ? 'person-add' : 'log-in'}
+            onPress={handleSubmit}
+            loading={loading}
+          />
         </View>
+
+        <Pressable onPress={toggleMode} style={styles.switch}>
+          <Text style={styles.switchText}>
+            {isSignUp ? 'Já tem conta? ' : 'Ainda não tem conta? '}
+            <Text style={styles.link}>{isSignUp ? 'Entrar' : 'Cadastre-se'}</Text>
+          </Text>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -149,40 +192,26 @@ export default function Login() {
 
 const makeStyles = (t) =>
   StyleSheet.create({
-    container: { flexGrow: 1, padding: 20, paddingTop: 56, gap: 20, justifyContent: 'center' },
-    hero: { borderRadius: 32, padding: 28, alignItems: 'center', gap: 8 },
-    logo: {
-      width: 72,
-      height: 72,
-      borderRadius: 36,
-      backgroundColor: 'rgba(255,255,255,0.22)',
-      justifyContent: 'center',
+    container: { flexGrow: 1, padding: 28, paddingTop: 64, justifyContent: 'center', maxWidth: 480, width: '100%', alignSelf: 'center' },
+    logoBox: { alignItems: 'center', gap: 10, marginBottom: 36 },
+    tagline: { color: t.textSecondary, fontSize: 14, textAlign: 'center' },
+    title: { fontSize: 26, fontWeight: '900', color: t.primary, letterSpacing: -0.6, marginBottom: 18 },
+    field: {
+      flexDirection: 'row',
       alignItems: 'center',
-    },
-    brand: { color: '#ffffff', fontSize: 38, fontWeight: '900' },
-    tagline: { color: 'rgba(255,255,255,0.88)', fontSize: 15, textAlign: 'center' },
-    card: {
+      gap: 10,
       backgroundColor: t.card,
-      borderRadius: 28,
-      padding: 22,
-      borderWidth: 1,
-      borderColor: t.border,
-      ...shadow(t),
-    },
-    title: { fontSize: 22, fontWeight: '900', color: t.text },
-    label: { fontSize: 14, fontWeight: '800', color: t.text, marginTop: 16, marginBottom: 8 },
-    input: {
-      backgroundColor: t.background,
       borderWidth: 1.5,
       borderColor: t.border,
       borderRadius: 16,
       paddingHorizontal: 16,
-      paddingVertical: 14,
-      fontSize: 16,
-      color: t.text,
+      marginTop: 12,
     },
-    inputError: { borderColor: t.error },
+    fieldError: { borderColor: t.error },
+    input: { flex: 1, paddingVertical: 15, fontSize: 16, color: t.text },
     error: { color: t.error, marginTop: 6, fontSize: 13 },
+    forgot: { alignSelf: 'flex-end', marginTop: 12 },
+    link: { color: t.primary, fontWeight: '800' },
     formError: {
       color: t.error,
       backgroundColor: t.errorSoft,
@@ -191,7 +220,14 @@ const makeStyles = (t) =>
       marginTop: 16,
       fontWeight: '700',
     },
-    switch: { alignItems: 'center', marginTop: 18 },
+    info: {
+      color: t.success,
+      backgroundColor: t.primarySoft,
+      borderRadius: 12,
+      padding: 12,
+      marginTop: 16,
+      fontWeight: '700',
+    },
+    switch: { alignItems: 'center', marginTop: 22 },
     switchText: { color: t.textSecondary },
-    switchLink: { color: t.primary, fontWeight: '800' },
   });
