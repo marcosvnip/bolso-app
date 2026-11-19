@@ -15,7 +15,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
 import AppButton from '../components/AppButton';
 import { useExpenses } from '../store/expenses-context';
-import { CATEGORIES, getCategoryMeta } from '../constants/colors';
+import { CATEGORIES, INCOME_CATEGORIES, getCategoryMeta } from '../constants/colors';
 import { useTheme } from '../constants/theme';
 import { formatDate, toISODate, todayISO } from '../util/date';
 
@@ -29,10 +29,10 @@ function notify(title, message) {
 
 function confirmDelete(onConfirm) {
   if (Platform.OS === 'web') {
-    if (window.confirm('Deseja realmente excluir esta despesa?')) onConfirm();
+    if (window.confirm('Deseja realmente excluir este lançamento?')) onConfirm();
     return;
   }
-  Alert.alert('Excluir despesa', 'Deseja realmente excluir esta despesa?', [
+  Alert.alert('Excluir lançamento', 'Deseja realmente excluir este lançamento?', [
     { text: 'Cancelar', style: 'cancel' },
     { text: 'Excluir', style: 'destructive', onPress: onConfirm },
   ]);
@@ -63,10 +63,11 @@ export default function ManageExpense({ route, navigation }) {
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const expenseId = route.params?.expenseId;
   const isEditing = Boolean(expenseId);
-  const { expenses, addExpense, updateExpense, deleteExpense } = useExpenses();
-  const current = expenses.find((item) => item.id === expenseId);
+  const { transactions, addExpense, updateExpense, deleteExpense } = useExpenses();
+  const current = transactions.find((item) => item.id === expenseId);
 
   const [form, setForm] = useState({
+    type: current?.type ?? 'despesa',
     description: current?.description ?? '',
     amount: current ? String(current.amount) : '',
     date: current?.date ?? todayISO(),
@@ -76,8 +77,17 @@ export default function ManageExpense({ route, navigation }) {
   const [showPicker, setShowPicker] = useState(false);
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: isEditing ? 'Editar despesa' : 'Nova despesa' });
-  }, [navigation, isEditing]);
+    const noun = form.type === 'receita' ? 'receita' : 'despesa';
+    navigation.setOptions({ title: isEditing ? `Editar ${noun}` : `Nova ${noun}` });
+  }, [navigation, isEditing, form.type]);
+
+  const isIncome = form.type === 'receita';
+  const categoryList = isIncome ? INCOME_CATEGORIES : CATEGORIES;
+
+  function handleType(type) {
+    setForm((prev) => ({ ...prev, type, category: '' }));
+    setErrors({});
+  }
 
   function handleChange(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -100,6 +110,7 @@ export default function ManageExpense({ route, navigation }) {
     if (Object.keys(found).length > 0) return;
 
     const data = {
+      type: form.type,
       description: form.description.trim(),
       amount: parseFloat(form.amount),
       date: form.date,
@@ -123,12 +134,31 @@ export default function ManageExpense({ route, navigation }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.segment}>
+          {[
+            { key: 'despesa', label: 'Despesa', icon: 'arrow-up-circle' },
+            { key: 'receita', label: 'Receita', icon: 'arrow-down-circle' },
+          ].map((option) => {
+            const active = form.type === option.key;
+            return (
+              <Pressable
+                key={option.key}
+                onPress={() => handleType(option.key)}
+                style={[styles.segmentItem, active && { backgroundColor: option.key === 'receita' ? theme.success : theme.primary }]}
+              >
+                <Ionicons name={option.icon} size={18} color={active ? '#ffffff' : theme.textSecondary} />
+                <Text style={[styles.segmentText, active && { color: '#ffffff' }]}>{option.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
         <Text style={styles.label}>Descrição</Text>
         <TextInput
           style={[styles.input, errors.description && styles.inputError]}
           value={form.description}
           onChangeText={(text) => handleChange('description', text)}
-          placeholder="Ex.: Almoço"
+          placeholder={isIncome ? 'Ex.: Salário de novembro' : 'Ex.: Almoço'}
           placeholderTextColor={theme.textSecondary}
         />
         {errors.description ? <Text style={styles.error}>{errors.description}</Text> : null}
@@ -172,7 +202,7 @@ export default function ManageExpense({ route, navigation }) {
 
         <Text style={styles.label}>Categoria</Text>
         <View style={styles.chips}>
-          {CATEGORIES.map((cat) => {
+          {categoryList.map((cat) => {
             const active = cat === form.category;
             const meta = getCategoryMeta(cat, theme.primary);
             return (
@@ -230,4 +260,7 @@ const makeStyles = (t) =>
     },
     chipText: { color: t.text, fontWeight: '700' },
     actions: { marginTop: 28, gap: 12 },
+    segment: { flexDirection: 'row', backgroundColor: t.card, borderRadius: 999, padding: 4, borderWidth: 1, borderColor: t.border },
+    segmentItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 999 },
+    segmentText: { fontWeight: '800', color: t.textSecondary },
   });

@@ -10,16 +10,20 @@ import { useTheme } from '../constants/theme';
 export default function AllExpenses({ navigation }) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const { expenses, loading, error } = useExpenses();
+  const { transactions, loading, error } = useExpenses();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Todas');
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return expenses
-      .filter((item) => category === 'Todas' || item.category === category)
+    return transactions
+      .filter((item) => {
+        if (category === 'Todas') return true;
+        if (category === 'Receitas') return item.type === 'receita';
+        return item.type !== 'receita' && item.category === category;
+      })
       .filter((item) => item.description.toLowerCase().includes(term));
-  }, [expenses, search, category]);
+  }, [transactions, search, category]);
 
   return (
     <View style={styles.container}>
@@ -45,7 +49,7 @@ export default function AllExpenses({ navigation }) {
         style={styles.chips}
         contentContainerStyle={styles.chipsContent}
       >
-        {['Todas', ...CATEGORIES].map((cat) => {
+        {['Todas', 'Receitas', ...CATEGORIES].map((cat) => {
           const active = cat === category;
           const meta = getCategoryMeta(cat, theme.primary);
           return (
@@ -54,9 +58,10 @@ export default function AllExpenses({ navigation }) {
               onPress={() => setCategory(cat)}
               style={[styles.chip, active && { backgroundColor: theme.primary, borderColor: theme.primary }]}
             >
-              {cat !== 'Todas' ? (
+              {cat !== 'Todas' && cat !== 'Receitas' ? (
                 <Ionicons name={meta.icon} size={15} color={active ? '#ffffff' : meta.color} />
               ) : null}
+              {cat === 'Receitas' ? <Ionicons name="arrow-down-circle" size={15} color={active ? '#ffffff' : theme.success} /> : null}
               <Text style={[styles.chipText, active && { color: '#ffffff' }]}>{cat}</Text>
             </Pressable>
           );
@@ -65,10 +70,10 @@ export default function AllExpenses({ navigation }) {
 
       <ExpenseList
         expenses={filtered}
-        periodLabel={category === 'Todas' ? 'Todas as despesas' : category}
+        periodLabel={category === 'Todas' ? 'Todos os lançamentos' : category}
         loading={loading}
         error={error}
-        emptyText="Nenhuma despesa encontrada. Toque no + para adicionar."
+        emptyText="Nenhum lançamento encontrado. Toque no + para adicionar."
         onItemPress={(id) => navigation.navigate('ManageExpense', { expenseId: id })}
       />
       <FAB onPress={() => navigation.navigate('ManageExpense')} />

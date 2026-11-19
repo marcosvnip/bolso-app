@@ -6,12 +6,12 @@ import { useExpenses } from '../store/expenses-context';
 import { daysAgoISO } from '../util/date';
 
 export default function RecentExpenses({ navigation }) {
-  const { expenses, loading, error } = useExpenses();
+  const { transactions, loading, error } = useExpenses();
 
   const recent = useMemo(() => {
     const limit = daysAgoISO(7);
-    return expenses.filter((item) => item.date >= limit);
-  }, [expenses]);
+    return transactions.filter((item) => item.date >= limit);
+  }, [transactions]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -20,7 +20,7 @@ export default function RecentExpenses({ navigation }) {
         periodLabel="Últimos 7 dias"
         loading={loading}
         error={error}
-        emptyText="Nenhuma despesa nos últimos 7 dias. Toque no + para adicionar."
+        emptyText="Nada nos últimos 7 dias. Toque no + para adicionar."
         onItemPress={(id) => navigation.navigate('ManageExpense', { expenseId: id })}
       />
       <FAB onPress={() => navigation.navigate('ManageExpense')} />
