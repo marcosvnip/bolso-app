@@ -150,16 +150,16 @@ export default function Login() {
 const makeStyles = (t) =>
   StyleSheet.create({
     container: { flexGrow: 1, padding: 20, paddingTop: 56, gap: 20, justifyContent: 'center' },
-    hero: { borderRadius: 32, padding: 28, alignItems: 'center', gap: 8 },
+    hero: { borderRadius: 28, padding: 28, alignItems: 'center', gap: 8, overflow: 'hidden' },
     logo: {
       width: 72,
       height: 72,
-      borderRadius: 36,
-      backgroundColor: 'rgba(255,255,255,0.22)',
+      borderRadius: 22,
+      backgroundColor: 'rgba(255,255,255,0.16)',
       justifyContent: 'center',
       alignItems: 'center',
     },
-    brand: { color: '#ffffff', fontSize: 38, fontWeight: '900' },
+    brand: { color: '#ffffff', fontSize: 42, fontWeight: '900', letterSpacing: -1.5 },
     tagline: { color: 'rgba(255,255,255,0.88)', fontSize: 15, textAlign: 'center' },
     card: {
       backgroundColor: t.card,
