@@ -10,13 +10,14 @@ import { formatMoney } from '../util/date';
 export default function ExpenseList({ expenses, periodLabel, loading, error, emptyText, onItemPress }) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const total = expenses.reduce((acc, item) => acc + item.amount, 0);
+  const spent = expenses.filter((item) => item.type !== 'receita').reduce((acc, item) => acc + item.amount, 0);
+  const earned = expenses.filter((item) => item.type === 'receita').reduce((acc, item) => acc + item.amount, 0);
 
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={styles.muted}>Carregando despesas...</Text>
+        <Text style={styles.muted}>Carregando lançamentos...</Text>
       </View>
     );
   }
@@ -39,9 +40,10 @@ export default function ExpenseList({ expenses, periodLabel, loading, error, emp
       ListHeaderComponent={
         <GradientCard style={styles.summary}>
           <Text style={styles.summaryLabel}>{periodLabel}</Text>
-          <Text style={styles.summaryTotal}>{formatMoney(total)}</Text>
+          <Text style={styles.summaryTotal}>{formatMoney(spent)}</Text>
           <Text style={styles.summaryCount}>
-            {expenses.length} {expenses.length === 1 ? 'despesa' : 'despesas'}
+            {expenses.length} {expenses.length === 1 ? 'lançamento' : 'lançamentos'}
+            {earned > 0 ? ` · Receitas ${formatMoney(earned)}` : ''}
           </Text>
         </GradientCard>
       }

@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { AuthProvider, useAuth } from './src/store/auth-context';
 import { ExpensesProvider } from './src/store/expenses-context';
@@ -12,6 +12,7 @@ import Summary from './src/screens/Summary';
 import RecentExpenses from './src/screens/RecentExpenses';
 import AllExpenses from './src/screens/AllExpenses';
 import ManageExpense from './src/screens/ManageExpense';
+import Profile from './src/screens/Profile';
 import { useTheme } from './src/constants/theme';
 
 const Stack = createNativeStackNavigator();
@@ -19,7 +20,6 @@ const Tab = createBottomTabNavigator();
 
 function Tabs() {
   const theme = useTheme();
-  const { signOut } = useAuth();
 
   return (
     <Tab.Navigator
@@ -36,11 +36,6 @@ function Tabs() {
         },
         headerStyle: { backgroundColor: theme.background },
         headerShadowVisible: false,
-        headerRight: () => (
-          <Pressable onPress={signOut} style={{ marginRight: 16 }} hitSlop={10}>
-            <Ionicons name="log-out-outline" size={26} color={theme.textSecondary} />
-          </Pressable>
-        ),
         headerTitleAlign: 'left',
         headerTitleStyle: { fontWeight: '900', fontSize: 26, color: theme.text },
         sceneStyle: { backgroundColor: theme.background },
@@ -70,6 +65,14 @@ function Tabs() {
           title: 'Todas as Despesas',
           tabBarLabel: 'Todas',
           tabBarIcon: ({ color, size }) => <Ionicons name="wallet-outline" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={Profile}
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle-outline" size={size} color={color} />,
         }}
       />
     </Tab.Navigator>

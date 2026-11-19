@@ -5,10 +5,11 @@ import { shadow, useTheme } from '../constants/theme';
 import { getCategoryMeta } from '../constants/colors';
 import { formatDate, formatMoney } from '../util/date';
 
-export default function ExpenseItem({ description, amount, date, category, onPress }) {
+export default function ExpenseItem({ description, amount, date, category, type, onPress }) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const meta = getCategoryMeta(category, theme.primary);
+  const isIncome = type === 'receita';
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
@@ -19,7 +20,9 @@ export default function ExpenseItem({ description, amount, date, category, onPre
         <Text style={styles.description} numberOfLines={1}>{description}</Text>
         <Text style={styles.sub}>{category} · {formatDate(date)}</Text>
       </View>
-      <Text style={styles.amount}>{formatMoney(amount)}</Text>
+      <Text style={[styles.amount, isIncome && { color: theme.success }]}>
+        {isIncome ? '+ ' : ''}{formatMoney(amount)}
+      </Text>
     </Pressable>
   );
 }

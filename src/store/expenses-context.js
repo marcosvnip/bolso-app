@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   addDoc,
   collection,
@@ -19,7 +19,7 @@ const ExpensesContext = createContext(null);
 export function ExpensesProvider({ children }) {
   const { user } = useAuth();
   const uid = user.uid;
-  const [expenses, setExpenses] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [budget, setBudgetState] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,7 +31,7 @@ export function ExpensesProvider({ children }) {
       (snapshot) => {
         const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
         list.sort((a, b) => b.date.localeCompare(a.date));
-        setExpenses(list);
+        setTransactions(list);
         setError(null);
         setLoading(false);
       },
@@ -52,6 +52,10 @@ export function ExpensesProvider({ children }) {
     return unsubscribe;
   }, [uid]);
 
+  // Lançamentos antigos não têm o campo "type": contam como despesa
+  const expenses = useMemo(() => transactions.filter((item) => item.type !== 'receita'), [transactions]);
+  const incomes = useMemo(() => transactions.filter((item) => item.type === 'receita'), [transactions]);
+
   function addExpense(data) {
     return addDoc(collection(db, COLLECTION), { ...data, uid });
   }
@@ -70,7 +74,7 @@ export function ExpensesProvider({ children }) {
 
   return (
     <ExpensesContext.Provider
-      value={{ expenses, budget, loading, error, addExpense, updateExpense, deleteExpense, setBudget }}
+      value={{ transactions, expenses, incomes, budget, loading, error, addExpense, updateExpense, deleteExpense, setBudget }}
     >
       {children}
     </ExpensesContext.Provider>
