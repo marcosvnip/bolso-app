@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AppButton from '../components/AppButton';
 import { friendlyAuthError, useAuth } from '../store/auth-context';
+import { APP_NAME, APP_TAGLINE } from '../constants/app';
 import { shadow, useTheme } from '../constants/theme';
 
 function validate(mode, values) {
@@ -77,8 +78,8 @@ export default function Login() {
           <View style={styles.logo}>
             <Ionicons name="wallet" size={38} color="#ffffff" />
           </View>
-          <Text style={styles.brand}>Bolso</Text>
-          <Text style={styles.tagline}>Suas finanças, simples e no seu bolso.</Text>
+          <Text style={styles.brand}>{APP_NAME}</Text>
+          <Text style={styles.tagline}>{APP_TAGLINE}</Text>
         </LinearGradient>
 
         <View style={styles.card}>
