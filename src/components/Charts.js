@@ -100,3 +100,40 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dot: { width: 10, height: 10, borderRadius: 5 },
 });
+
+// Medidor circular de porcentagem (usado na meta mensal)
+export function Gauge({ ratio, color, size = 150, stroke = 16 }) {
+  const theme = useTheme();
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const center = size / 2;
+  const length = Math.min(Math.max(ratio, 0), 1) * circumference;
+
+  return (
+    <View style={{ width: size, height: size, alignSelf: 'center', justifyContent: 'center', alignItems: 'center' }}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Circle cx={center} cy={center} r={radius} stroke={theme.primarySoft} strokeWidth={stroke} fill="none" />
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={color}
+          strokeWidth={stroke}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${length} ${circumference - length}`}
+          rotation={-90}
+          origin={`${center}, ${center}`}
+        />
+      </Svg>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <View style={styles.centerBox}>
+          <Text style={{ fontSize: 34, fontWeight: '900', color: theme.text, letterSpacing: -1 }}>
+            {Math.round(ratio * 100)}%
+          </Text>
+          <Text style={[styles.centerLabel, { color: theme.textSecondary }]}>da meta</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
